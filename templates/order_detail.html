@@ -1,0 +1,772 @@
+{% extends "base.html" %}
+
+{% block title %}Детали заказа - Stone Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <a href="/orders" class="back-button">← Назад к заказам</a>
+
+    {% if error %}
+    <div class="error-message">
+        <p>{{ error }}</p>
+    </div>
+    {% else %}
+    <div class="order-details-card">
+        <div class="order-header">
+            <div class="order-info">
+                <h2>Заказ #{{ order.id }}</h2>
+                <div class="order-date">{{ order.created_at }}</div>
+            </div>
+            <div class="order-status status-{{ order.status }}">
+                {% if order.status == 'pending' %}Новый
+                {% elif order.status == 'confirmed' %}Подтвержден
+                {% elif order.status == 'cancelled' %}Отменен
+                {% elif order.status == 'returned' %}Полностью возвращен
+                {% elif order.status == 'partially_returned' %}Частично возвращен
+                {% else %}{{ order.status }}{% endif %}
+
+                {% if order.status == 'partially_returned' and order.returned_count %}
+                <div class="partial-return-info">
+                    ({{ order.returned_count }} из {{ items|length }} товаров возвращено)
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="order-content">
+            <div class="customer-info">
+                <h3>Информация о клиенте</h3>
+                <p><strong>Имя:</strong> {{ order.user_name }}</p>
+                <p><strong>ID клиента:</strong> {{ order.user_id }}</p>
+                {% if order.user_phone %}
+                <p><strong>Телефон:</strong> {{ order.user_phone }}</p>
+                {% endif %}
+            </div>
+
+            <div class="order-summary">
+                <h3>Сводка заказа</h3>
+                <div class="summary-row">
+                    <span>Общая сумма:</span>
+                    <span class="total-amount">{{ order.total_amount }} ₽</span>
+                </div>
+                {% if order.status == 'partially_returned' or order.status == 'returned' %}
+                <div class="summary-row">
+                    <span>Возвращено товаров:</span>
+                    <span class="returned-count">{{ order.returned_count or 0 }} из {{ items|length }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="order-items">
+                <h3>Товары в заказе</h3>
+
+                {% if items and items|length > 0 %}
+                    {% for item in items %}
+                    <div class="item-card" id="item-{{ item.id }}">
+                        <div class="item-image">
+                            {% if item.image_url and item.image_url != 'None' and item.image_url != 'null' %}
+                                {% if item.image_url.startswith('[') %}
+                                    {% set images = item.image_url|from_json %}
+                                    {% if images and images|length > 0 %}
+                                        <img src="{{ images[0] }}" alt="{{ item.product_name }}">
+                                    {% else %}
+                                        <div class="no-image">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13zM1.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-13z"/>
+                                                <path d="M3.5 4a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.5-.5h-9zM4 5h8v6H4V5z"/>
+                                            </svg>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <img src="{{ item.image_url }}" alt="{{ item.product_name }}">
+                                {% endif %}
+                            {% else %}
+                                <div class="no-image">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13zM1.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-13z"/>
+                                        <path d="M3.5 4a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.5-.5h-9zM4 5h8v6H4V5z"/>
+                                    </svg>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="item-details">
+                            <h4>{{ item.product_name or 'Неизвестный товар' }}</h4>
+                            <div class="item-props">
+                                <span><strong>Количество:</strong> {{ item.quantity }} шт.</span>
+                                <span><strong>Цена:</strong> {{ item.price }} ₽/шт.</span>
+                                {% if item.sku %}
+                                <span><strong>Артикул:</strong> {{ item.sku }}</span>
+                                {% endif %}
+                                {% if item.brand %}
+                                <span><strong>Бренд:</strong> {{ item.brand }}</span>
+                                {% endif %}
+                                {% if item.size_value %}
+                                <span><strong>Размер:</strong> {{ item.size_value }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="item-total">
+                                <strong>Итого:</strong> {{ item.quantity * item.price }} ₽
+                            </div>
+                        </div>
+
+                        <!-- Кнопка возврата отдельной позиции -->
+                        {% if (order.status == 'confirmed' or order.status == 'partially_returned') and not item.returned %}
+                        <div class="item-actions">
+                            <button class="btn-return-item" onclick="returnItem({{ item.id }}, {{ order.id }})"
+                                    title="Вернуть эту позицию">
+                                Вернуть товар
+                            </button>
+                        </div>
+                        {% elif item.returned %}
+                        <div class="item-status returned">
+                            ✅ Возвращен
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-items-info">
+                        <p>🔄 Товары загружаются...</p>
+                        <p class="small-text">Если товары не появятся в течение нескольких минут, проверьте связь с базой данных</p>
+                        <div class="debug-order-info">
+                            <p><strong>Информация для отладки:</strong></p>
+                            <p>ID заказа: {{ order.id }}</p>
+                            <p>Статус: {{ order.status }}</p>
+                            <p>Сумма: {{ order.total_amount }} ₽</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Блок действий с заказом -->
+            <div class="order-actions-section">
+                {% if order.status == 'pending' %}
+                <div class="action-buttons pending-actions">
+                    <h3>Действия с заказом</h3>
+                    <p>Этот заказ ожидает подтверждения. Вы можете:</p>
+                    <div class="action-buttons">
+                        <button onclick="confirmOrder({{ order.id }})" class="btn-confirm">
+                            <span class="btn-icon">✅</span>
+                            Подтвердить заказ
+                        </button>
+                        <button onclick="cancelOrder({{ order.id }})" class="btn-cancel">
+                            <span class="btn-icon">❌</span>
+                            Отменить заказ
+                        </button>
+                    </div>
+                </div>
+
+                {% elif order.status == 'confirmed' or order.status == 'partially_returned' %}
+                <div class="return-section">
+                    <h3>Оформление возврата</h3>
+
+                    {% if order.status == 'partially_returned' %}
+                    <div class="partial-return-alert">
+                        <p>⚠️ Этот заказ уже частично возвращен. Вы можете:</p>
+                        <ul>
+                            <li>Вернуть оставшиеся товары по отдельности (кнопки ниже)</li>
+                            <li>Вернуть весь оставшийся заказ целиком</li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <p>Вы можете вернуть весь заказ, нажав кнопку ниже.</p>
+                    {% endif %}
+
+                    <div class="action-buttons">
+                        <button onclick="returnOrder({{ order.id }})" class="btn-return">
+                            {% if order.status == 'partially_returned' %}
+                            Вернуть оставшийся заказ
+                            {% else %}
+                            Вернуть весь заказ
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+
+                {% elif order.status == 'cancelled' %}
+                <div class="order-status-info">
+                    <h3>Заказ отменен</h3>
+                    <p>Этот заказ был отменен. Действия недоступны.</p>
+                </div>
+
+                {% elif order.status == 'returned' %}
+                <div class="order-status-info">
+                    <h3>Заказ полностью возвращен</h3>
+                    <p>Этот заказ был полностью возвращен. Действия недоступны.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+
+    /* Добавляем стили для частичного возврата */
+.status-partially_returned {
+    background: rgba(255, 193, 7, 0.3);
+    color: var(--warning);
+}
+
+.partial-return-info {
+    font-size: 11px;
+    margin-top: 3px;
+    opacity: 0.8;
+    color: var(--warning);
+}
+
+.returned-count {
+    font-weight: 600;
+    color: var(--warning);
+}
+
+.partial-return-alert {
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.partial-return-alert ul {
+    margin: 8px 0 8px 20px;
+    font-size: 14px;
+}
+
+.partial-return-alert li {
+    margin-bottom: 4px;
+}
+
+/* Обновляем стиль для возвращенных товаров */
+.item-status.returned {
+    color: #28a745;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: right;
+    padding: 8px 12px;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 4px;
+    margin-left: 10px;
+    white-space: nowrap;
+}
+/* Все CSS стили остаются без изменений из предыдущего ответа */
+:root {
+    --primary: #131c39;
+    --secondary: #000000;
+    --success: #28a745;
+    --danger: #dc3545;
+    --text: #ffffff;
+    --light-text: rgba(255, 255, 255, 0.85);
+    --background: #f0f2f5;
+    --card-bg: linear-gradient(135deg, var(--primary), var(--secondary));
+    --profit-bg: linear-gradient(135deg, var(--success), #20c997);
+    --today-bg: linear-gradient(135deg, #131c39, #3750a1);
+    --border: rgba(255, 255, 255, 0.2);
+    --skeleton-bg: rgba(255, 255, 255, 0.1);
+    --filter-bg: #ffffff;
+    --filter-text: #333333;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--background);
+    color: #333;
+    padding: 12px;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.back-button {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 10px 16px;
+    background: var(--card-bg);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.back-button:hover {
+    opacity: 0.9;
+}
+
+.order-details-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    color: var(--text);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.order-header {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--border);
+}
+
+.order-info h2 {
+    font-size: 18px;
+    margin-bottom: 4px;
+}
+
+.order-date {
+    font-size: 12px;
+    color: var(--light-text);
+}
+
+.order-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 8px;
+    white-space: nowrap;
+}
+
+.status-pending {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.status-confirmed {
+    background: rgba(40, 167, 69, 0.3);
+    color: var(--success);
+}
+
+.status-cancelled {
+    background: rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+}
+
+.order-content {
+    padding: 16px;
+}
+
+.customer-info, .order-summary {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.customer-info h3, .order-summary h3, .order-items h3, .return-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: var(--text);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.total-amount {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.item-card {
+    display: flex;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    position: relative;
+}
+
+.item-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-right: 12px;
+    background: linear-gradient(135deg, #2c3e50, #4a6491);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.no-image {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.item-details {
+    flex: 1;
+}
+
+.item-details h4 {
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+.item-props {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--light-text);
+}
+
+.item-total {
+    font-weight: 600;
+}
+
+.item-actions {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.btn-return-item {
+    background: rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.4);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    min-width: 100px;
+    text-align: center;
+}
+
+.btn-return-item:hover {
+    background: rgba(220, 53, 69, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-return-item:active {
+    transform: translateY(0);
+}
+
+.item-status.returned {
+    color: #28a745;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: right;
+    padding: 8px 12px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.btn-confirm, .btn-cancel, .btn-return {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: 150px;
+}
+
+.btn-confirm {
+    background: rgba(40, 167, 69, 0.3);
+    color: #28a745;
+}
+
+.btn-confirm:hover {
+    background: rgba(40, 167, 69, 0.4);
+}
+
+.btn-cancel, .btn-return {
+    background: rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+}
+
+.btn-cancel:hover, .btn-return:hover {
+    background: rgba(220, 53, 69, 0.4);
+}
+
+.return-section {
+    margin-top: 20px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid var(--danger);
+}
+
+.error-message {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.no-items-info {
+    text-align: center;
+    padding: 30px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.small-text {
+    font-size: 12px;
+    color: var(--light-text);
+    margin-top: 10px;
+}
+
+.debug-order-info {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+    font-size: 12px;
+    text-align: left;
+}
+
+.order-status-info {
+    margin-top: 20px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .btn-confirm, .btn-cancel, .btn-return {
+        flex: none;
+    }
+
+    .item-actions {
+        justify-content: center;
+        margin-top: 15px;
+    }
+
+    .btn-return-item {
+        width: 100%;
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    .item-card {
+        flex-direction: column;
+    }
+
+    .item-image {
+        width: 100%;
+        height: 120px;
+        margin-right: 0;
+        margin-bottom: 12px;
+    }
+}
+
+@media (min-width: 769px) {
+    .btn-return-item {
+        min-width: 120px;
+    }
+}
+</style>
+
+<script>
+// Функция для возврата отдельной позиции
+function returnItem(itemId, orderId) {
+    if (confirm('Вы уверены, что хотите вернуть этот товар? Количество будет возвращено на склад.')) {
+        var url = '/api/order-items/' + itemId + '/return';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                // Обновляем статус позиции
+                var itemCard = document.getElementById('item-' + itemId);
+                if (itemCard) {
+                    var actionsDiv = itemCard.querySelector('.item-actions');
+                    if (actionsDiv) {
+                        actionsDiv.innerHTML = '<div class="item-status returned">✅ Возвращен</div>';
+                    }
+                }
+
+                // Если изменился статус заказа, обновляем страницу
+                if (data.order_status && (data.order_status === 'returned' || data.order_status === 'partially_returned')) {
+                    // Показываем сообщение и обновляем страницу
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    // Только позиция возвращена, показываем сообщение
+                    alert(data.message);
+                }
+            } else {
+                alert('Ошибка при возврате товара: ' + data.error);
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Произошла ошибка при возврате товара');
+        });
+    }
+}
+
+// Функция для возврата всего заказа
+function returnOrder(orderId) {
+    var message = 'Вы уверены, что хотите вернуть заказ? Все не возвращенные товары будут возвращены на склад.';
+
+    if (confirm(message)) {
+        var url = '/orders/' + orderId + '/return';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                alert('Заказ успешно возвращен. ' + data.returned_items + ' товар(ов) возвращены на склад.');
+                location.reload();
+            } else {
+                alert('Ошибка при возврате заказа: ' + data.error);
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Произошла ошибка при возврате заказа');
+        });
+    }
+}
+
+// Функция для подтверждения заказа
+function confirmOrder(orderId) {
+    if (confirm('Подтвердить заказ #' + orderId + '?')) {
+        var url = '/api/orders/' + orderId + '/confirm';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        })
+        .catch(function(error) {
+            alert('Ошибка: ' + error);
+        });
+    }
+}
+
+// Функция для отмены заказа
+function cancelOrder(orderId) {
+    if (confirm('Отменить заказ #' + orderId + '?')) {
+        var url = '/api/orders/' + orderId + '/cancel';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        })
+        .catch(function(error) {
+            alert('Ошибка: ' + error);
+        });
+    }
+}
+
+// Функция для обновления статуса заказа
+function updateOrderStatus(orderId, newStatus) {
+    if (confirm('Вы уверены, что хотите изменить статус заказа?')) {
+        var url = '/api/orders/' + orderId + '/status';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(function(response) {
+            var contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(function(text) {
+                    throw new Error('Server returned HTML: ' + text.substring(0, 200));
+                });
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                alert('Статус заказа успешно обновлен');
+                location.reload();
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Ошибка сети: ' + error.message);
+        });
+    }
+}
+</script>
+{% endblock %}

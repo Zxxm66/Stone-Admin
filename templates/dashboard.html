@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Stone - Панель управления{% endblock %}
+
+{% block header_title %}Main Panel{% endblock %}
+
+{% block content %}
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-title">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="icon-improved">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                ТОВАРОВ В КАТАЛОГЕ
+            </div>
+            <div class="card-value">{{ total_products }}</div>
+            <div class="card-description">Доступно для продажи</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="icon-improved">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                АКТИВНЫХ КЛИЕНТОВ
+            </div>
+            <div class="card-value">{{ total_customers }}</div>
+            <div class="card-description">Сделали покупки</div>
+        </div>
+    </div>
+
+    <h2 class="section-title">Последние заказы</h2>
+
+    <div class="orders-section">
+        <div class="orders-header">
+            <div class="orders-title">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="icon-improved">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Активные заказы ({{ recent_orders|length }})
+            </div>
+        </div>
+
+        <div class="orders-list">
+            {% for order in recent_orders %}
+            <div class="order-item">
+                <div class="order-header">
+                    <div class="order-id">Заказ #{{ order.id }}</div>
+                    <div class="order-date">{{ order.created_at.strftime('%d.%m.%Y') }}</div>
+                </div>
+                <div class="order-product">
+                    {{ order.first_product_name }}
+                    {% if order.items_count > 1 %} и еще {{ order.items_count - 1 }} товар(ов){% endif %}
+                </div>
+                <div class="order-details">
+                    <div class="order-status status-{{ order.status }}">{{ order.status_ru }}</div>
+                    <div class="order-price">{{ order.total_amount }} ₽</div>
+                </div>
+                <div class="order-actions">
+    {% if order.status == 'pending' %}
+        <a href="/orders/{{ order.id }}" class="order-btn view-btn">Подробнее</a>
+    {% elif order.status == 'confirmed' %}
+        <button class="order-btn return-btn">Вернуть товар</button>
+        <a href="/orders/{{ order.id }}" class="order-btn view-btn">Подробнее</a>
+    {% elif order.status == 'cancelled' %}
+        <a href="/orders/{{ order.id }}" class="order-btn view-btn" style="flex: 1;">Подробнее</a>
+    {% elif order.status == 'returned' %}
+        <a href="/orders/{{ order.id }}" class="order-btn view-btn" style="flex: 1;">Подробнее</a>
+    {% else %}
+        <a href="/orders/{{ order.id }}" class="order-btn view-btn" style="flex: 1;">Подробнее</a>
+    {% endif %}
+</div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p>Заказов нет</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <style>
+    .order-status {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        margin-left: 8px;
+        white-space: nowrap;
+    }
+
+    .status-pending {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .status-confirmed {
+        background: rgba(40, 167, 69, 0.3);
+        color: #28a745;
+    }
+
+    .status-cancelled {
+        background: rgba(220, 53, 69, 0.3);
+        color: #dc3545;
+    }
+
+    .status-returned {
+        background: rgba(23, 162, 184, 0.3);
+        color: #17a2b8;
+    }
+    </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard JavaScript loaded successfully');
+
+    // Делегирование событий для всех кнопок заказов
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+        console.log('Clicked:', target);
+
+        // Находим ближайший элемент заказа
+        const orderItem = target.closest('.order-item');
+        if (!orderItem) return;
+
+        // Получаем ID заказа из текста "Заказ #123"
+        const orderIdText = orderItem.querySelector('.order-id').textContent;
+        const orderId = orderIdText.match(/\d+/)[0];
+        console.log('Order ID:', orderId);
+
+        // Обработка кнопки подтверждения
+        if (target.classList.contains('confirm-btn')) {
+            e.preventDefault();
+            console.log('Confirm button clicked for order:', orderId);
+            confirmOrder(orderId);
+        }
+
+        // Обработка кнопки отмены
+        else if (target.classList.contains('cancel-btn')) {
+            e.preventDefault();
+            console.log('Cancel button clicked for order:', orderId);
+            cancelOrder(orderId);
+        }
+
+        // Обработка кнопки возврата
+        else if (target.classList.contains('return-btn')) {
+            e.preventDefault();
+            console.log('Return button clicked for order:', orderId);
+            returnOrder(orderId);
+        }
+    });
+
+    // Функция подтверждения заказа
+    function confirmOrder(orderId) {
+        if (confirm('Подтвердить заказ #' + orderId + '?')) {
+            console.log('Sending confirm request for order:', orderId);
+            fetch(`/api/orders/${orderId}/confirm`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                console.log('Confirm response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Confirm response data:', data);
+                if (data.success) {
+                    showNotification(data.message || 'Заказ успешно подтвержден!');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Ошибка сети: ' + error.message);
+            });
+        }
+    }
+
+    // Функция отмены заказа
+    function cancelOrder(orderId) {
+        if (confirm('Отменить заказ #' + orderId + '?')) {
+            console.log('Sending cancel request for order:', orderId);
+            fetch(`/api/orders/${orderId}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                console.log('Cancel response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Cancel response data:', data);
+                if (data.success) {
+                    showNotification(data.message || 'Заказ успешно отменен!');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Ошибка сети: ' + error.message);
+            });
+        }
+    }
+
+    // Функция возврата заказа
+    function returnOrder(orderId) {
+        if (confirm('Вернуть заказ #' + orderId + '? Все товары будут возвращены на склад.')) {
+            console.log('Sending return request for order:', orderId);
+            fetch(`/orders/${orderId}/return`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                console.log('Return response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Return response data:', data);
+                if (data.success) {
+                    showNotification('Заказ успешно возвращен! ' + (data.returned_items ? data.returned_items + ' товар(ов) возвращены на склад.' : ''));
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Ошибка сети: ' + error.message);
+            });
+        }
+    }
+
+    // Функция показа уведомлений
+    function showNotification(message) {
+        console.log('Showing notification:', message);
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 300px;
+            word-wrap: break-word;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 3000);
+    }
+
+    // Имитация загрузки данных
+    simulateLoading();
+});
+
+function simulateLoading() {
+    const cards = document.querySelectorAll('.card-value, .finance-value, .product-title, .order-product');
+    cards.forEach(card => {
+        const originalHtml = card.innerHTML;
+        card.innerHTML = '<div class="skeleton skeleton-value"></div>';
+        setTimeout(() => {
+            card.innerHTML = originalHtml;
+        }, 1500);
+    });
+}
+
+// Добавим глобальные функции как запасной вариант (но они не должны понадобиться)
+window.handleConfirm = function(orderId) {
+    console.log('Global handleConfirm called for order:', orderId);
+    document.dispatchEvent(new CustomEvent('confirmOrder', { detail: orderId }));
+};
+
+window.handleCancel = function(orderId) {
+    console.log('Global handleCancel called for order:', orderId);
+    document.dispatchEvent(new CustomEvent('cancelOrder', { detail: orderId }));
+};
+
+window.handleReturn = function(orderId) {
+    console.log('Global handleReturn called for order:', orderId);
+    document.dispatchEvent(new CustomEvent('returnOrder', { detail: orderId }));
+};
+
+// Обработчики для глобальных функций
+document.addEventListener('confirmOrder', function(e) {
+    confirmOrder(e.detail);
+});
+
+document.addEventListener('cancelOrder', function(e) {
+    cancelOrder(e.detail);
+});
+
+document.addEventListener('returnOrder', function(e) {
+    returnOrder(e.detail);
+});
+
+console.log('Dashboard functions initialized');
+</script>
+{% endblock %}

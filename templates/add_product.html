@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить товар - Stone Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container fade-in">
+    <h1><i class="fas fa-plus icon"></i>Добавить товар</h1>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-circle"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" class="product-form" id="product-form">
+        <div class="form-group">
+            <label for="name">Название товара *</label>
+            <input type="text" id="name" name="name" value="{{ form_data.name if form_data }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="price">Цена (в рублях) *</label>
+            <input type="number" id="price" name="price" value="{{ form_data.price if form_data }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="sku">Артикул *</label>
+            <input type="text" id="sku" name="sku" value="{{ form_data.sku if form_data }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="brand">Бренд *</label>
+            <input type="text" id="brand" name="brand"
+                   value="{{ form_data.brand if form_data }}"
+                   list="brand-suggestions"
+                   placeholder="Введите название бренда"
+                   required>
+            <datalist id="brand-suggestions">
+                {% for brand in existing_brands %}
+                <option value="{{ brand }}">
+                {% endfor %}
+            </datalist>
+            <small class="form-help">Начните вводить название бренда или выберите из существующих</small>
+        </div>
+
+        <div class="form-group">
+            <label for="category_id">Категория *</label>
+            <select id="category_id" name="category_id" required>
+                <option value="">Выберите категорию</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if form_data and form_data.category_id == category.id|string %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- ОБНОВЛЕННЫЙ БЛОК: Размеры и количество -->
+        <div class="form-group">
+            <label>Размерный ряд *</label>
+            <div class="sizes-container" id="sizes-container">
+                <div class="size-row">
+                    <select name="size_ids[]" class="size-select" required>
+                        <option value="">Размер</option>
+                        {% for size in sizes %}
+                        <option value="{{ size.id }}">{{ size.value }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="number" name="quantities[]" placeholder="Количество" min="0" class="quantity-input" value="0" required>
+                    <button type="button" class="btn-remove-size" title="Удалить размер">✕</button>
+                </div>
+            </div>
+            <button type="button" id="add-size" class="btn btn-secondary btn-sm">
+                <i class="fas fa-plus"></i> Добавить размер
+            </button>
+            <small class="form-help">Добавьте все размеры, которые есть в наличии</small>
+        </div>
+
+        <div class="form-group">
+            <label for="image_url">Ссылка на изображение</label>
+            <input type="text" id="image_url" name="image_url" value="{{ form_data.image_url if form_data }}">
+            <small class="form-help">Введите прямую ссылку на изображение (начинается с https://i.ibb.co/)</small>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save icon"></i>Добавить товар с размерами
+            </button>
+            <a href="/products" class="btn btn-secondary">
+                <i class="fas fa-times icon"></i>Отмена
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+.alert {
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.product-form {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-help {
+    color: #666;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+/* ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ РАЗМЕРОВ */
+.sizes-container {
+    margin-bottom: 1rem;
+}
+
+.size-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.size-select, .quantity-input {
+    flex: 1;
+}
+
+/* НОВЫЕ СТИЛИ ДЛЯ КНОПКИ УДАЛЕНИЯ - КАК В УВЕДОМЛЕНИЯХ */
+.btn-remove-size {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    height: 42px; /* Такая же высота как у инпутов */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px)
+}
+
+.btn-remove-size:hover {
+    background: #c82333;
+    transform: scale(1.05);
+}
+
+.btn-remove-size:active {
+    transform: scale(0.95);
+}
+
+/* Скрываем кнопку удаления для первой строки при загрузке */
+.size-row:first-child .btn-remove-size {
+    display: none;
+}
+
+#add-size {
+    margin-top: 0.5rem;
+}
+
+/* Стили для кнопок формы */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sizesContainer = document.getElementById('sizes-container');
+    const addSizeButton = document.getElementById('add-size');
+
+    // Функция для добавления новой строки размера
+    function addSizeRow() {
+        const newRow = document.createElement('div');
+        newRow.className = 'size-row';
+        newRow.innerHTML = `
+            <select name="size_ids[]" class="size-select" required>
+                <option value="">Размер</option>
+                {% for size in sizes %}
+                <option value="{{ size.id }}">{{ size.value }}</option>
+                {% endfor %}
+            </select>
+            <input type="number" name="quantities[]" placeholder="Количество" min="0" class="quantity-input" value="0" required>
+            <button type="button" class="btn-remove-size" title="Удалить размер">✕</button>
+        `;
+        sizesContainer.appendChild(newRow);
+
+        // Добавляем обработчик для кнопки удаления
+        newRow.querySelector('.btn-remove-size').addEventListener('click', function() {
+            sizesContainer.removeChild(newRow);
+            updateRemoveButtons();
+        });
+
+        updateRemoveButtons();
+    }
+
+    // Функция для обновления видимости кнопок удаления
+    function updateRemoveButtons() {
+        const rows = sizesContainer.querySelectorAll('.size-row');
+
+        // Показываем кнопки удаления только если есть больше одной строки
+        rows.forEach((row, index) => {
+            const removeBtn = row.querySelector('.btn-remove-size');
+            if (rows.length > 1) {
+                removeBtn.style.display = 'flex';
+            } else {
+                removeBtn.style.display = 'none';
+            }
+        });
+    }
+
+    // Обработчик для кнопки добавления размера
+    addSizeButton.addEventListener('click', addSizeRow);
+
+    // Инициализация - добавляем обработчики для существующих кнопок удаления
+    document.querySelectorAll('.btn-remove-size').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const row = this.closest('.size-row');
+            row.remove();
+            updateRemoveButtons();
+        });
+    });
+
+    // Инициализация при загрузке
+    updateRemoveButtons();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Заказы - Stone Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header>
+        <h1>Управление заказами</h1>
+
+        <!-- Навигационные кнопки -->
+        <div class="nav-buttons">
+            <a href="/dashboard" class="nav-button">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                Главная
+            </a>
+            <a href="/products" class="nav-button">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+                Товары
+            </a>
+            <a href="/orders" class="nav-button active">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                Заказы
+            </a>
+            <a href="/sales" class="nav-button">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Продажи
+            </a>
+            <a href="/logout" class="nav-button logout">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Выйти
+            </a>
+        </div>
+    </header>
+
+    <!-- Сетка заказов -->
+    <div class="orders-grid">
+        {% for order in orders %}
+        <div class="order-card" data-status="{{ order.status }}" data-date="{{ order.created_at }}" data-amount="{{ order.total_amount }}" data-customer="{{ order.user_id }}">
+            <div class="order-header">
+                <div class="order-info">
+                    <div class="order-id">Заказ #{{ order.id }}</div>
+                    <div class="order-date">{{ order.created_at }}</div>
+                </div>
+                <div class="order-status status-{{ order.status }}">
+                    {% if order.status == 'pending' %}Новый
+                    {% elif order.status == 'confirmed' %}Подтвержден
+                    {% elif order.status == 'cancelled' %}Отменен
+                    {% else %}{{ order.status }}{% endif %}
+                </div>
+            </div>
+            <div class="order-content">
+                <div class="order-total">
+                    <div>Сумма заказа:</div>
+                    <div>{{ order.total_amount }} ₽</div>
+                </div>
+                <div class="order-actions">
+                    <a href="/orders/{{ order.id }}" class="order-btn view-btn">Подробнее</a>
+                    {% if order.status == 'pending' %}
+                    <button class="order-btn process-btn" onclick="updateOrderStatus({{ order.id }}, 'confirmed')">Подтвердить</button>
+                    <button class="order-btn cancel-btn" onclick="updateOrderStatus({{ order.id }}, 'cancelled')">Отменить</button>
+                    {% elif order.status == 'confirmed' %}
+                    <button class="order-btn cancel-btn" onclick="updateOrderStatus({{ order.id }}, 'cancelled')">Отменить</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+:root {
+    --primary: #131c39;
+    --secondary: #3750a1;
+    --success: #28a745;
+    --danger: #dc3545;
+    --text: #ffffff;
+    --light-text: rgba(255, 255, 255, 0.85);
+    --background: #f0f2f5;
+    --card-bg: linear-gradient(135deg, var(--primary), var(--secondary));
+    --border: rgba(255, 255, 255, 0.2);
+}
+
+.order-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.status-pending {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.status-confirmed {
+    background: rgba(40, 167, 69, 0.3); /* зеленый фон */
+    color: #28a745; /* зеленый текст */
+}
+
+.status-cancelled {
+    background: rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+}
+
+.process-btn {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.cancel-btn {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+</style>
+
+<script>
+function updateOrderStatus(orderId, newStatus) {
+    if (confirm('Вы уверены, что хотите изменить статус заказа?')) {
+        fetch(`/orders/${orderId}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) location.reload();
+            else alert('Ошибка: ' + data.error);
+        });
+    }
+}
+</script>
+{% endblock %}

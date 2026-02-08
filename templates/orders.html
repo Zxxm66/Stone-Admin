@@ -1,0 +1,756 @@
+{% extends "base.html" %}
+
+{% block title %}Заказы - Stone {% endblock %}
+
+{% block header_title %}Заказы{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Специфичные стили только для страницы заказов */
+.filters-container {
+    background: var(--filter-bg);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--filter-text);
+    margin-bottom: 6px;
+}
+
+.filter-group select, .filter-group input {
+    padding: 10px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    color: var(--filter-text);
+}
+
+.search-box {
+    display: flex;
+    margin-top: 10px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px 0 0 8px;
+    font-size: 14px;
+}
+
+.search-box button {
+    padding: 10px 16px;
+    background: var(--card-bg);
+    color: white;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.orders-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 16px;
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--light-text);
+}
+
+.orders-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.order-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    color: var(--text);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.order-header {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.order-info {
+    flex: 1;
+}
+
+.order-id {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.order-date {
+    font-size: 12px;
+    color: var(--light-text);
+}
+
+.order-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 8px;
+    white-space: nowrap;
+}
+
+.status-pending {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.status-confirmed {
+    background: rgba(40, 167, 69, 0.3);
+    color: #28a745;
+}
+
+.status-cancelled {
+    background: rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+}
+
+.status-returned {
+    background: rgba(23, 162, 184, 0.3);
+    color: #17a2b8;
+}
+
+.order-content {
+    padding: 16px;
+}
+
+.order-product {
+    display: flex;
+    margin-bottom: 12px;
+}
+
+.product-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-right: 12px;
+    background: linear-gradient(135deg, #2c3e50, #4a6491);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-placeholder {
+    color: white;
+    font-size: 14px;
+}
+
+.product-info {
+    flex: 1;
+}
+
+.product-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.product-details {
+    font-size: 12px;
+    color: var(--light-text);
+}
+
+.order-total {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-weight: 600;
+}
+
+.order-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.order-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    text-align: center;
+}
+
+.view-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text);
+}
+
+.process-btn {
+    background: rgba(40, 167, 69, 0.2);
+    color: var(--success);
+}
+
+.cancel-btn {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+.return-btn {
+    background: rgba(255, 255, 51, 0.1);
+    color: #ff6624;
+}
+
+.order-btn:hover {
+    opacity: 0.9;
+}
+
+.order-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.pagination-btn {
+    padding: 8px 12px;
+    background: var(--card-bg);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.pagination-btn.active {
+    background: var(--secondary);
+}
+
+.no-orders {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.order-meta {
+    margin-top: 5px;
+}
+
+.order-meta small {
+    display: block;
+    font-size: 11px;
+    color: var(--light-text);
+    margin-bottom: 2px;
+}
+
+/* Адаптация для заказов */
+@media (max-width: 340px) {
+    .orders-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .order-header {
+        flex-direction: column;
+    }
+
+    .order-status {
+        margin-left: 0;
+        margin-top: 8px;
+        align-self: flex-start;
+    }
+
+    .order-actions {
+        flex-direction: column;
+    }
+}
+
+@media (min-width: 768px) {
+    .filter-row {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .orders-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .orders-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+.product-size {
+    font-size: 14px;
+    color: var(--light-text);
+    margin: 5px 0;
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Фильтры заказов -->
+    <div class="filters-container">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Статус заказа</label>
+                <select id="statusFilter">
+                    <option value="">Все заказы</option>
+                    <option value="pending">Новые</option>
+                    <option value="confirmed">Подтвержденные</option>
+                    <option value="cancelled">Отмененные</option>
+                    <option value="returned">Возвращенные</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Период</label>
+                <select id="periodFilter">
+                    <option value="all">За все время</option>
+                    <option value="today">Сегодня</option>
+                    <option value="week">Неделя</option>
+                    <option value="month">Месяц</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Сортировка</label>
+                <select id="sortFilter">
+                    <option value="newest">Сначала новые</option>
+                    <option value="oldest">Сначала старые</option>
+                    <option value="amount_asc">По сумме (возр.)</option>
+                    <option value="amount_desc">По сумме (убыв.)</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Клиент</label>
+                <select id="customerFilter">
+                    <option value="">Все клиенты</option>
+                    {% for order in orders %}
+                    <option value="{{ order.user_id }}">{{ order.user_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="search-box">
+            <input type="text" placeholder="Поиск по номеру заказа или клиенту..." id="searchInput">
+            <button id="searchBtn">Найти</button>
+        </div>
+    </div>
+
+    <!-- Статистика заказов -->
+    <div class="orders-stats">
+        <div class="stat-card">
+            <div class="stat-value">{{ orders|length }}</div>
+            <div class="stat-label">Всего заказов</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+            <div class="stat-label">Новые</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ orders|selectattr('status', 'equalto', 'confirmed')|list|length }}</div>
+            <div class="stat-label">Подтвержденные</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ orders|selectattr('status', 'equalto', 'cancelled')|list|length }}</div>
+            <div class="stat-label">Отмененные</div>
+        </div>
+
+    </div>
+
+    <!-- Сетка заказов -->
+    <div class="orders-grid">
+        {% if error %}
+        <div class="error-message" style="grid-column: 1 / -1; text-align: center; padding: 20px;">
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+
+        {% for order in orders %}
+        <div class="order-card" data-status="{{ order.status }}" data-date="{{ order.created_at }}" data-amount="{{ order.total_amount }}" data-customer="{{ order.user_id }}">
+            <div class="order-header">
+                <div class="order-info">
+                    <div class="order-id">Заказ #{{ order.id }}</div>
+                    <div class="order-date">{{ order.created_at }}</div>
+                </div>
+                <div class="order-status status-{{ order.status }}">
+                    {% if order.status == 'pending' %}Новый
+                    {% elif order.status == 'confirmed' %}Подтвержден
+                    {% elif order.status == 'cancelled' %}Отменен
+                    {% elif order.status == 'returned' %}Возвращен
+                    {% else %}{{ order.status }}{% endif %}
+                </div>
+            </div>
+            <div class="order-content">
+            <div class="order-product">
+    <div class="product-image">
+        {% if order.get('items') and order['items']|length > 0 %}
+            {% set first_item = order['items'][0] %}
+            {% if first_item.get('image_url') and first_item.image_url != 'None' and first_item.image_url != 'null' %}
+                {% if first_item.image_url.startswith('[') %}
+                    {% set images = first_item.image_url|from_json %}
+                    {% if images and images|length > 0 %}
+                        <img src="{{ images[0] }}" alt="{{ first_item.product_name }}">
+                    {% else %}
+                        <div class="image-placeholder">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13zM1.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-13z"/>
+                                <path d="M3.5 4a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.5-.5h-9zM4 5h8v6H4V5z"/>
+                            </svg>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <img src="{{ first_item.image_url }}" alt="{{ first_item.product_name }}">
+                {% endif %}
+            {% else %}
+                <div class="image-placeholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13zM1.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-13z"/>
+                        <path d="M3.5 4a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.5-.5h-9zM4 5h8v6H4V5z"/>
+                    </svg>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="image-placeholder">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13zM1.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-13z"/>
+                    <path d="M3.5 4a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.5-.5h-9zM4 5h8v6H4V5z"/>
+                </svg>
+            </div>
+        {% endif %}
+    </div>
+    <!-- В product-info блоке замените на: -->
+<div class="product-info">
+    <div class="product-name">
+        {% if order.get('items') and order['items']|length > 0 %}
+            {{ order['items'][0].get('product_name', 'Товар') }}
+            {% if order['items']|length > 1 %}
+                + еще {{ order['items']|length - 1 }} товар(ов)
+            {% endif %}
+        {% else %}
+            <!-- Показываем информацию о заказе даже без товаров -->
+            Заказ #{{ order.id }}
+            <div class="order-meta">
+                <small>Сумма: {{ order.total_amount }} ₽</small>
+                <small>Статус: {{ order.status }}</small>
+            </div>
+        {% endif %}
+    </div>
+      {% if order.get('items') and order['items']|length > 0 and order['items'][0].get('size_value') %}
+    <div class="product-size">Размер: {{ order['items'][0].size_value }}</div>
+    {% endif %}
+    <div class="product-details">Клиент : {{ order.user_name }}</div>
+</div>
+</div>
+                <div class="order-total">
+                    <div>Сумма заказа:</div>
+                    <div>{{ order.total_amount }} ₽</div>
+                </div>
+                <div class="order-actions">
+                    <a href="/orders/{{ order.id }}" class="order-btn view-btn">Подробнее</a>
+                    {% if order.status == 'pending' %}
+                    <button onclick="confirmOrder({{ order.id }})" class="order-btn process-btn">Подтвердить</button>
+                    <button onclick="cancelOrder({{ order.id }})" class="order-btn cancel-btn">Отменить</button>
+                    {% elif order.status == 'confirmed' %}
+                    <button class="order-btn return-btn" onclick="returnOrder({{ order.id }})">Вернуть</button>
+                    {% elif order.status == 'cancelled' or order.status == 'returned' %}
+                    <button class="order-btn view-btn" disabled>Завершен</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-orders" style="grid-column: 1 / -1; text-align: center; padding: 40px 20px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#ccc" viewBox="0 0 16 16" style="margin-bottom: 16px;">
+                <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1H.5zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+            </svg>
+            <h3 style="margin-bottom: 8px; color: #666;">Заказов нет</h3>
+            <p style="color: #888;">Новые заказы появятся здесь</p>
+        </div>
+        {% endfor %}
+    </div>
+
+
+
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusFilter = document.getElementById('statusFilter');
+    const periodFilter = document.getElementById('periodFilter');
+    const sortFilter = document.getElementById('sortFilter');
+    const customerFilter = document.getElementById('customerFilter');
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+
+    // Обработчики фильтров
+    [statusFilter, periodFilter, sortFilter, customerFilter].forEach(filter => {
+        filter.addEventListener('change', applyFilters);
+    });
+
+    searchBtn.addEventListener('click', applyFilters);
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilters();
+    });
+
+    function applyFilters() {
+        const statusValue = statusFilter.value;
+        const periodValue = periodFilter.value;
+        const sortValue = sortFilter.value;
+        const customerValue = customerFilter.value;
+        const searchTerm = searchInput.value.toLowerCase();
+
+        const orderCards = document.querySelectorAll('.order-card');
+        let visibleCount = 0;
+
+        orderCards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            const date = card.getAttribute('data-date');
+            const amount = card.getAttribute('data-amount');
+            const customer = card.getAttribute('data-customer');
+            const orderId = card.querySelector('.order-id').textContent.toLowerCase();
+            const customerName = card.querySelector('.product-details').textContent.toLowerCase();
+
+            let matchesStatus = !statusValue || status === statusValue;
+            let matchesCustomer = !customerValue || customer === customerValue;
+            let matchesSearch = !searchTerm ||
+                               orderId.includes(searchTerm) ||
+                               customerName.includes(searchTerm);
+
+            // Фильтрация по периоду (упрощенная версия)
+            let matchesPeriod = true;
+            if (periodValue !== 'all') {
+                const orderDate = new Date(date);
+                const today = new Date();
+
+                if (periodValue === 'today') {
+                    matchesPeriod = orderDate.toDateString() === today.toDateString();
+                } else if (periodValue === 'week') {
+                    const weekAgo = new Date();
+                    weekAgo.setDate(today.getDate() - 7);
+                    matchesPeriod = orderDate >= weekAgo;
+                } else if (periodValue === 'month') {
+                    const monthAgo = new Date();
+                    monthAgo.setMonth(today.getMonth() - 1);
+                    matchesPeriod = orderDate >= monthAgo;
+                }
+            }
+
+            if (matchesStatus && matchesPeriod && matchesCustomer && matchesSearch) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Сортировка
+        sortOrders(sortValue);
+    }
+
+    function sortOrders(sortValue) {
+        const container = document.querySelector('.orders-grid');
+        const items = Array.from(container.children).filter(item => item.style.display !== 'none');
+
+        items.sort((a, b) => {
+            let aValue, bValue;
+
+            switch(sortValue) {
+                case 'oldest':
+                    aValue = new Date(a.getAttribute('data-date'));
+                    bValue = new Date(b.getAttribute('data-date'));
+                    return aValue - bValue;
+
+                case 'amount_asc':
+                    aValue = parseFloat(a.getAttribute('data-amount'));
+                    bValue = parseFloat(b.getAttribute('data-amount'));
+                    return aValue - bValue;
+
+                case 'amount_desc':
+                    aValue = parseFloat(a.getAttribute('data-amount'));
+                    bValue = parseFloat(b.getAttribute('data-amount'));
+                    return bValue - aValue;
+
+                default: // newest (по умолчанию)
+                    aValue = new Date(a.getAttribute('data-date'));
+                    bValue = new Date(b.getAttribute('data-date'));
+                    return bValue - aValue;
+            }
+        });
+
+        // Очищаем контейнер и добавляем отсортированные элементы
+        items.forEach(item => container.appendChild(item));
+    }
+});
+
+function updateOrderStatus(orderId, newStatus) {
+    if (confirm('Вы уверены, что хотите изменить статус заказа?')) {
+        fetch(`/api/orders/${orderId}/status`, {  // Используем тот же эндпоинт
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => {
+            // Проверяем Content-Type
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error(`Server returned HTML: ${text.substring(0, 200)}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert('Статус заказа успешно обновлен');
+                location.reload();
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ошибка сети: ' + error.message);
+        });
+    }
+}
+
+function returnOrder(orderId) {
+    if (confirm('Вы уверены, что хотите вернуть заказ? Все товары будут возвращены на склад.')) {
+        fetch(`/orders/${orderId}/return`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Заказ успешно возвращен. ${data.returned_items} товар(ов) возвращены на склад.`);
+                location.reload();
+            } else {
+                alert('Ошибка при возврате заказа: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Произошла ошибка при возврате заказа');
+        });
+    }
+}
+// В orders.html добавьте этот JavaScript код:
+function confirmOrder(orderId) {
+    if (confirm('Подтвердить заказ #' + orderId + '?')) {
+        fetch(`/api/orders/${orderId}/confirm`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Ошибка: ' + error);
+        });
+    }
+}
+
+function cancelOrder(orderId) {
+    if (confirm('Отменить заказ #' + orderId + '?')) {
+        fetch(`/api/orders/${orderId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Ошибка: ' + error);
+        });
+    }
+}
+// Определение типа устройства
+if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    document.body.classList.add('mobile-device');
+}
+
+// Специально для iPhone
+if (/iPhone/i.test(navigator.userAgent)) {
+    document.body.classList.add('iphone');
+}
+</script>
+{% endblock %}

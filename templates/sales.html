@@ -1,0 +1,674 @@
+{% extends "base.html" %}
+
+{% block title %}Продажи - Stone Shop Admin{% endblock %}
+
+{% block header_title %}Управление продажами{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Статистические карточки -->
+<div class="stats-cards">
+    <div class="stat-card">
+        <div class="stat-value">{{ total_revenue }} ₽</div>
+        <div class="stat-label">ОБЩАЯ ВЫРУЧКА</div>
+        <div class="stat-description">За все время</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-value">{{ total_sales }}</div>
+        <div class="stat-label">ВСЕГО ПРОДАЖ</div>
+        <div class="stat-description">За все время</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-value">{{ total_customers }}</div>
+        <div class="stat-label">КЛИЕНТОВ</div>
+        <div class="stat-description">Уникальных покупателей</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-value">{{ avg_order_value }} ₽</div>
+        <div class="stat-label">СРЕДНИЙ ЧЕК</div>
+        <div class="stat-description">На один заказ</div>
+    </div>
+    </div>
+
+
+    <!-- Графики -->
+    <div class="charts-container">
+        <div class="chart-card">
+            <h3>Динамика продаж (7 дней)</h3>
+            <div class="chart-container">
+                <canvas id="salesChart"></canvas>
+                {% if not sales_chart_labels %}
+                <div class="no-chart-data">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#ccc" viewBox="0 0 16 16">
+                        <path d="M0 0h16v16H0V0z" fill="none"/>
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M7.5 4.5a.5.5 0 0 1 1 0v4a.5.5 0 0 1-1 0v-4zm0 6a.5.5 0 0 1 1 0v1a.5.5 0 0 1-1 0v-1z"/>
+                    </svg>
+                    <p>Нет данных для графика</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Распределение по категориям</h3>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+                {% if not category_chart_labels %}
+                <div class="no-chart-data">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#ccc" viewBox="0 0 16 16">
+                        <path d="M0 0h16v16H0V0z" fill="none"/>
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M7.5 4.5a.5.5 0 0 1 1 0v4a.5.5 0 0 1-1 0v-4zm0 6a.5.5 0 0 1 1 0v1a.5.5 0 0 1-1 0v-1z"/>
+                    </svg>
+                    <p>Нет данных для графика</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary: #131c39;
+    --secondary: #3750a1;
+    --text: #ffffff;
+    --light-text: rgba(255, 255, 255, 0.85);
+    --card-bg: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 14px;
+    color: var(--text);
+    text-align: center;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: var(--light-text);
+    line-height: 1.2;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.stat-description {
+    font-size: 10px;
+    color: var(--light-text);
+    opacity: 0.9;
+    line-height: 1.2;
+}
+
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.chart-card h3 {
+    margin-bottom: 14px;
+    color: var(--primary);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.chart-container {
+    position: relative;
+    height: 220px;
+    width: 100%;
+}
+
+.no-chart-data {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    text-align: center;
+}
+
+.no-chart-data svg {
+    margin-bottom: 8px;
+    opacity: 0.5;
+}
+
+.no-chart-data p {
+    font-size: 13px;
+}
+
+/* Адаптация для очень маленьких экранов (до 340px) */
+@media (max-width: 340px) {
+    body {
+        padding: 8px;
+    }
+
+    .stats-cards {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .stat-card {
+        padding: 10px;
+        min-height: 80px;
+        border-radius: 8px;
+    }
+
+    .stat-value {
+        font-size: 16px;
+    }
+
+    .stat-label {
+        font-size: 9px;
+    }
+
+    .stat-description {
+        font-size: 8px;
+    }
+
+    .chart-card {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .chart-card h3 {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .chart-container {
+        height: 180px;
+    }
+}
+
+/* Адаптация для средних экранов (от 400px) */
+@media (min-width: 400px) {
+    .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 14px;
+        min-height: 90px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    .stat-description {
+        font-size: 9px;
+    }
+}
+
+/* Адаптация для больших экранов (от 768px) */
+@media (min-width: 768px) {
+    body {
+        padding: 20px;
+    }
+
+    .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .stat-card {
+        min-height: 100px;
+        padding: 16px;
+    }
+
+    .stat-value {
+        font-size: 22px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+    }
+
+    .stat-description {
+        font-size: 11px;
+    }
+
+    .chart-container {
+        height: 250px;
+    }
+
+    .charts-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Специальные стили для iPhone 11 */
+@media only screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) {
+    body {
+        padding: 14px;
+    }
+
+    .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 12px;
+        min-height: 85px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    .stat-description {
+        font-size: 9px;
+    }
+
+    .chart-container {
+        height: 200px;
+    }
+}
+
+/* Специальные стили для iPhone SE */
+@media only screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) {
+    body {
+        padding: 10px;
+    }
+
+    .stat-card {
+        min-height: 85px;
+    }
+
+    .stat-value {
+        font-size: 17px;
+    }
+
+    .stat-label {
+        font-size: 9px;
+    }
+
+    .stat-description {
+        font-size: 8px;
+    }
+}
+
+/* Специальные стили для iPhone 14 Pro Max */
+@media screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) {
+    .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 12px;
+        min-height: 85px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    .stat-description {
+        font-size: 9px;
+    }
+
+    .chart-container {
+        height: 200px;
+    }
+}
+
+/* Темная тема - белый фон для графиков */
+@media (prefers-color-scheme: dark) {
+    .chart-card {
+        background: #FFFFFF;
+        color: #333;
+    }
+
+    .no-chart-data {
+        color: #666;
+    }
+}
+
+/* Предотвращение горизонтального скролла */
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+.container {
+    padding: 12px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Улучшение для Safari на iOS */
+@supports (-webkit-touch-callout: none) {
+    .stat-card {
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing charts...');
+
+    // Проверяем, загружена ли библиотека Chart.js
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js не загружен!');
+        // Пытаемся загрузить альтернативный CDN
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js';
+        script.onload = initCharts;
+        document.head.appendChild(script);
+        return;
+    }
+
+    initCharts();
+});
+
+function initCharts() {
+    console.log('Chart.js loaded successfully');
+
+    // Проверяем, есть ли данные для графиков
+    const salesChartLabels = {{ sales_chart_labels | tojson }};
+    const salesChartValues = {{ sales_chart_values | tojson }};
+    const categoryChartLabels = {{ category_chart_labels | tojson }};
+    const categoryChartValues = {{ category_chart_values | tojson }};
+
+    console.log('Sales chart data - labels:', salesChartLabels, 'values:', salesChartValues);
+    console.log('Category chart data - labels:', categoryChartLabels, 'values:', categoryChartValues);
+
+    // График динамики продаж
+    if (salesChartLabels && salesChartLabels.length > 0 && salesChartValues && salesChartValues.length > 0) {
+        console.log('Creating sales chart...');
+        try {
+            const salesCtx = document.getElementById('salesChart');
+            if (!salesCtx) {
+                console.error('Canvas element salesChart not found');
+                return;
+            }
+
+            // Скрываем сообщение об отсутствии данных
+            const noDataElement = salesCtx.parentNode.querySelector('.no-chart-data');
+            if (noDataElement) {
+                noDataElement.style.display = 'none';
+            }
+
+            // Форматируем даты для лучшего отображения
+            const formattedLabels = salesChartLabels.map(label => {
+                const date = new Date(label);
+                return date.toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'short'
+                });
+            });
+
+            const salesChart = new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: formattedLabels,
+                    datasets: [{
+                        label: 'Выручка (₽)',
+                        data: salesChartValues,
+                        backgroundColor: 'rgba(55, 80, 161, 0.2)',
+                        borderColor: 'rgba(55, 80, 161, 1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: 'rgba(55, 80, 161, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Выручка: ' + context.parsed.y.toLocaleString('ru-RU') + ' ₽';
+                                },
+                                title: function(context) {
+                                    const date = new Date(salesChartLabels[context[0].dataIndex]);
+                                    return date.toLocaleDateString('ru-RU', {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    });
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString('ru-RU') + ' ₽';
+                                },
+                                font: {
+                                    size: 12
+                                },
+                                maxTicksLimit: 6
+                            },
+                            title: {
+                                display: true,
+                                text: 'Сумма (₽)',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                },
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 7
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+            console.log('Sales chart created successfully');
+        } catch (error) {
+            console.error('Error creating sales chart:', error);
+        }
+    } else {
+        console.log('No data for sales chart');
+    }
+
+    // График распределения по категориям
+    if (categoryChartLabels && categoryChartLabels.length > 0 && categoryChartValues && categoryChartValues.length > 0) {
+        console.log('Creating category chart...');
+        try {
+            const categoryCtx = document.getElementById('categoryChart');
+            if (!categoryCtx) {
+                console.error('Canvas element categoryChart not found');
+                return;
+            }
+
+            // Скрываем сообщение об отсутствии данных
+            const noDataElement = categoryCtx.parentNode.querySelector('.no-chart-data');
+            if (noDataElement) {
+                noDataElement.style.display = 'none';
+            }
+
+            // Обрезаем длинные названия категорий
+            const formattedLabels = categoryChartLabels.map(label => {
+                if (label.length > 15) {
+                    return label.substring(0, 12) + '...';
+                }
+                return label;
+            });
+
+            const categoryChart = new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: formattedLabels,
+                    datasets: [{
+                        data: categoryChartValues,
+                        backgroundColor: [
+                            'rgba(55, 80, 161, 0.8)',
+                            'rgba(255, 225, 36, 0.8)',
+                            'rgba(40, 167, 69, 0.8)',
+                            'rgba(255, 102, 36, 0.8)',
+                            'rgba(108, 117, 125, 0.8)',
+                            'rgba(220, 53, 69, 0.8)',
+                            'rgba(0, 123, 255, 0.8)'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    const label = categoryChartLabels[context.dataIndex] || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value.toLocaleString('ru-RU')} ₽ (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+            console.log('Category chart created successfully');
+        } catch (error) {
+            console.error('Error creating category chart:', error);
+        }
+    } else {
+        console.log('No data for category chart');
+    }
+
+    // Обработка изменения размера окна
+    window.addEventListener('resize', function() {
+        // Перерисовываем графики при изменении размера окна
+        Chart.getChart("salesChart")?.resize();
+        Chart.getChart("categoryChart")?.resize();
+    });
+}
+</script>
+{% endblock %}
